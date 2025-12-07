@@ -107,6 +107,19 @@ When we move from text to images, the problem intensifies. A typical VLM first c
 ### The Evolution of Positional Encodings
 To fix this, researchers developed a series of positional encodings that tag tokens or patches with location information. Many of these methods were originally developed to handle word order in sentences, but here we focus on what happens when they are applied to images.
 
+<details class="bg-transparent border-0 shadow-none p-0">
+<summary class="positionencoding">Rough graphical representation of positional encodings on 2D images</summary>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/4.png" %}
+    </div>
+</div>
+<div class="caption">
+    Illustration of how different positional encodings represent the same 2×2 image grid. This is a very rough schematic representation of APE, RPE, and RoPE. It is not the actual values or operations used in real models.
+</div>
+</details>
+
 The original Transformer paper introduces **absolute position encoding (APE)**, which assigns a unique fixed vector to every patch. This approach is fine when all input images share the same size, but it fails once the resolution changes. If a model is trained on 224x224 images, it learns positional vectors tied to that exact grid. At test time, when we give a larger image, the model has no natural way to represent the extra patches. A common workaround is to stretch or interpolate the learned embeddings to a new size, but this distorts the spatial relationships. The model essentially overfits to the specific absolute locations, which hurts its ability to generalize to new resolutions or exhibit translation-invariant behavior.
 
 To move beyond fixed grid sizes, later work introduced **relative position encoding (RPE)**<d-cite key="shaw2018rpe"></d-cite>. Instead of defining where a patch is globally, RPE says where it is *relative to other patches* (for example, "The chick patch is two steps away from the cup patch"). As self-attention already operates on pairwise relationships, this feels like a natural fit, and the model can handle variable-length inputs and different layouts more gracefully. But for 2D images, this comes with a trade-off. RPE largely discards absolute coordinates, which are crucial for localization-heavy tasks like object detection. If you care about *exactly* where a pixel or patch is on the image, a purely relative scheme can degrade performance on tasks that demand precise spatial grounding<d-cite key="wu2021rethinking"></d-cite>. In addition, many RPE implementations do not play well with key–value (KV) caching, since relative biases depend on the current sequence length, which forces the model to recompute more attention scores and leads to higher memory and computation costs for long contexts.
