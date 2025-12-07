@@ -117,6 +117,15 @@ Even if we hypothesize the existence of an advanced method that perfectly preser
 
 This effect becomes evident in a simple permutation test<d-cite key="qi2025beyondsemantics"></d-cite>. Take an image, break it into patches as usual, but then randomly shuffle the order of the visual tokens to destroy the original spatial layout. Many VLMs show only a negligible drop in performance on standard benchmarks. For instance, consider the following captioning example:
 
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/3.png" %}
+    </div>
+</div>
+<div class="caption">
+    Result of the permutation test with Qwen3-VL. Even after the shuffling the model produces similar captions of the image (features highlighted in brown, yellow, and blue).
+</div>
+
 Even after random shuffling, the generated captions remain nearly identical. The model still identifies the objects (e.g., "chick" and "blue bonnet") and produces a reasonable description of the scene. This suggests that, despite mechanisms like RoPE, the model effectively treats the image as a bag-of-semantic-features, with positional encodings contributing little to the final decision.
 
 To counteract this, Qi et al. propose **embedding norm normalization**<d-cite key="qi2025beyondsemantics"></d-cite>. The idea is simple: rescale the magnitudes of the visual feature embeddings so that the semantic content and positional signals are on a comparable scale. This simple intervention encourages the model to attend more to positional cues, improving spatial reasoning without degrading overall semantic understanding.
