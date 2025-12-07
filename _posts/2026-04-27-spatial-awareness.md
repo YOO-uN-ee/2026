@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Where's the Chicken? Unpacking Spatial Awareness in Vision-Language Models
-description: Modern vision-language models (VLMs) have achieved impressive success in recognizing and describing visual content, yet they continue to struggle with understanding spatial relationships. The limitation persists despite massive data and model scaling, suggesting that the root of the problem lies in the architecture and training objective rather than data alone. This post examines the underlying causes and discusses why recent proposed fixes, while promising, remain insufficient to achieve robust spatial reasoning.
+description: Modern vision-language models (VLMs) have achieved impressive success in recognizing and describing visual content, yet they continue to struggle with understanding spatial relationships. The limitation persists even with massive data and model scaling, suggesting that the root of the problem lies in the architecture and training objective rather than data alone. This post examines the underlying causes and discusses why recent proposed fixes, while promising, remain insufficient to achieve robust spatial reasoning.
 date: 2026-04-27
 future: true
 htmlwidgets: true
@@ -28,11 +28,11 @@ toc:
   - name: Why Does the VLM Architecture Forget Position?
     subsections:
       - name: The Evolution of Positional Encodings
-      - name: The "Semantic Loudness" Problem
+      - name: The "Semantic Loudness"
   - name: Do VLMs Look at the Right Place?
     subsections:
       - name: Text Dominates, Vision Follows
-      - name: Misdirected Gaze Problem
+      - name: Misdirected Gaze
   - name: What are VLMs Designed For?
   - name: Path Towards Spatially-Aware VLMs
 
@@ -58,9 +58,11 @@ _styles: >
 
 ## Introduction: The "What" vs. the "Where"
 
-True image understanding requires us to look beyond a collection of pixels. As an image is a 2D projection of a fundamentally 3D world, mentally reconstructing the scene requires two essential components: recognizing "**what**" is in the image and understanding "**where**" they are located. 
+To truly understand an image, we have to treat it as more than a collection of pixels. As an image is a 2D projection of a fundamentally 3D world, mentally reconstructing the scene requires at least two components: recognizing "**what**" is in the image and understanding "**where**" those things are located. 
 
-This concept of "where" takes two forms. One is the absolute where: identifying an object’s position on the image plane, typically by drawing a bounding box around the object. The other is the ***relational where***: reasoning about how objects are situated relative to one another (e.g., "the chick is behind the cup" or "the car is to the left of the tree"). This post focuses on the latter: how models reason about spatial relationships. Without knowing both what is present and where things are in relation to each other, we cannot reliably infer the scene behind the image. To illustrate, let’s consider a simple example: two chick sitting near a cup. 
+This notion of "where" comes in two forms. One is the *absolute where*: identifying an object’s position on the image plane, often by drawing a bounding box around it. The other is the *relational where*: reasoning about how objects are situated relative to one another (e.g., "the chick is behind the cup" or "the car is to the left of the tree"). Both forms are important, but in this post we focus on the latter: how models reason about spatial relationships.
+
+Combing back to the problem of image understanding, we cannot reliably infer the scene behind an image without knowing both what is present and where things are in relation to each other. Let's consider a simple scene with two chicks sitting near a cup. 
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -71,13 +73,13 @@ This concept of "where" takes two forms. One is the absolute where: identifying 
     An image with two chicks and a cup on a wooden table. From the camera’s viewpoint, a chick with a purple ribbon is in front of a ceramic cup, while a chick with a blue bonnet is behind the cup.
 </div>
 
-If someone asks, "*Grab me the chick behind the cup*," the instruction makes sense only if we can correctly identify the "cup" (*what*) and accurately interpret what "behind" means in the appropriate reference frame (*relational where*). For example, if "behind" is defined relative to the camera’s viewpoint, it refers to the object that is farther from the camera than the cup. This kind of relational reasoning is fundamental to real-world systems such as autonomous vehicles and robotic arms, in which understanding both the objects and their spatial relationships is critical for safe and reliable action.
+If someone asks, "*Grab me the chick behind the cup*," the instruction only makes sense if we can correctly identify the "cup" (*what*) and accurately interpret what "behind" means in the appropriate reference frame (*relational where*). For example, if "behind" is defined relative to the camera’s viewpoint, it refers to the object that is farther from the camera than the cup. This kind of relational reasoning is fundamental to real-world systems such as autonomous vehicles and robotic arms, where understanding both the objects and their spatial relationships is critical for safe and reliable action.
 
-Modern vision-language models (VLMs), such as Gemini and ChatGPT, have become remarkably good at the "***what***." When asked to describe an image or generate a caption, they often produce accurate and detailed responses. As these models grow larger and get trained on increasingly vast datasets, their ability to recognize objects and describe their visible content continues to improve. In many evaluations<d-cite key="lin2014microsoft"></d-cite><d-cite key="antol2015vqa"></d-cite>, they demonstrate nearly human-level performance in identifying what is present in an image.
+Modern vision-language models (VLMs), such as Gemini and ChatGPT, have become remarkably good at the *what*. When asked to describe an image or generate a caption, they often produce accurate and detailed responses. As these models grow larger and get trained on increasingly more datasets, their ability to recognize objects and describe their visible content continues to improve. In many evaluations<d-cite key="lin2014microsoft"></d-cite><d-cite key="antol2015vqa"></d-cite>, they already achieve near human-level performance at identifying what is present in an image.
 
-Yet, when it comes to reasoning "**where**" things are relative to each other, these same models often fall short.
+However, when it comes to reasoning about *where* things are relative to each other, these same models often fall short.
 
-This "what" vs. "where" paradox in modern VLMs becomes clear in combined reasoning tasks such as "*Find the hidden object*," as shown in the following example.<d-footnote>View the actual conversation <a href="https://gemini.google.com/share/f5622207a4e3">here</a></d-footnote>.
+This <mark><b>"what" vs. "where" paradox</b></mark> in modern VLMs becomes especially clear in combined reasoning tasks like "*Find the hidden object*."<d-footnote>View the actual conversation <a href="https://gemini.google.com/share/f5622207a4e3">here</a>.</d-footnote>
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -88,31 +90,32 @@ This "what" vs. "where" paradox in modern VLMs becomes clear in combined reasoni
     Task asking Gemini 3 Pro to identify the hidden object.
 </div>
 
-In this example, the model (Gemini 3 Pro) correctly identifies the hidden object (the golden ring) but incorrectly describes its location. Specifically, it states that the ring is to the *right* of the red house (sticker), when in fact it is located *below* it. These errors may appear subtle, but they reveal a deep and persistent limitation of modern VLMs: strong semantic recognition does not guarantee accurate relational spatial understanding.
+In this example, the model (Gemini 3 Pro) correctly identifies the hidden object (the golden ring) but mislocates it. It claims that the ring is to the *right* of the red Snoopy doghouse, when in fact it is located *below* it. These mistakes may seem minor, but they expose a deeper and persistent limitation of modern VLMs: strong semantic recognition does not guarantee accurate relational spatial understanding.
 
-We might expect this gap to shrink as models grow larger and receive more training data. However, despite massive datasets and billions of parameters, as seen in the most advanced systems, this spatial weakness persists. A growing body of research suggests that the issue runs in the core architecture and the objectives VLMs are trained on. In other words, the limitation may not only stem from how much data we provide, but also from how these models are built and what they are fundamentally trained to prioritize.
+We might expect this gap to shrink as models grow larger and are trained on more data. Yet, despite massive datasets and billions of parameters in state-of-the-art systems, this spatial weakness remains. A growing body of research suggests that the issue lies in the core architecture and training objectives of VLMs. In other words, the limitation stems not only from how much data we provide, but also from how these models are built and what they are fundamentally optimized to prioritize.
 
-In this post, we take a closer look at the architectural roots of this spatial blindness in modern VLMs. We examine the building blocks that processes visual information in these models, the training objectives that prioritize specific skills over others, and why recently proposed fixes still fall short of fully resolving the problem. Understanding why models struggle with this relational "where," and how we can overcome this limitation is a key step towards building vision systems that truly understand the world they see.
-
+In this post, we take a closer look at the architectural roots of this spatial blindness in modern VLMs. We examine the building blocks that process visual information, the training objectives that favor certain capabilities over others, and why many recent fixes still fall short of fully solving the problem. Understanding why models struggle with this relational "where" and how we might overcome this limitation is a key step toward building vision systems that truly understand the worlds they see.
 
 ## Why Does the VLM Architecture Forget Position?
-To understand why VLMs frequently fail to capture spatial relationships, we must look at their architectural foundation: the **Transformer**. Since its introduction in *Attention is All You Need*<d-cite key="vaswani2017attention"></d-cite>, Transformer has become the backbone of modern language and vision-language models due to the power of its core building block, **self-attention**. In brief, self-attention calculates the relevance of one token (or a word) to another. For example, in the sentence, "*Here is a yellow chick*," the method identifies that "*yellow*" is a descriptor highly relevant to "*chick*."
+To understand why VLMs often fail to capture spatial relationships, we need to look at their architectural foundation: the **Transformer**. Since its introduction in *Attention is All You Need*<d-cite key="vaswani2017attention"></d-cite>, the Transformer has become the backbone of modern language and vision-language models due to the power of its core building block, **self-attention**. In brief, self-attention measures how relevant one token (or word) is to another. For example, in the sentence, "*Here is a yellow chick*," the method learns that "*yellow*" is closely tied to "*chick*" because it describes it.
 
-However, pure self-attention has a critical blind spot: it does not care about order. If we only rely on the relevance between tokens, the sentences "The chick is in front of the cup" and "The cup is in front of the chick" look identical, even though they describe entirely different spatial situations. Without any notion of token position, the model reduces the sentence to a bag-of-words, where only co-occurrence matters, not who is in front of whom.
+However, pure self-attention has a critical blind spot: it does not care about order. If we only rely on relevance between tokens, the sentences "*The chick is in front of the cup*" and "*The cup is in front of the chick*" look identical, even though they describe entirely different spatial situations. Without any notion of token position, the model collapses the sentence into something like a bag-of-words representation, where only co-occurrence matters, not who is in front of whom.
 
-When we move from text to images, the problem intensifies. A typical VLM first chops an image into a grid of patches (for example, 16x16 or 32x32), converts the patches into tokens, and then feeds the resulting sequence of tokens into the Transformer. Without positional information, the model views this image as a bag-of-patches. It perceives the existence of a chick and a cup, but it has no structural mechanism for knowing whether the patch containing the chick is located to the left, above, or behind the patch containing the cup. 
+When we move from text to images, the problem intensifies. A typical VLM first chops an image into a grid of patches (for example, 16x16 or 32x32), converts the patches into tokens, and then feeds the resulting sequence into the Transformer. Without positional information, the model treats the image as a bag-of-patches. It may recognize that there is a chick and a cup, but it has no built-in mechanism to tell whether the chick patch is to the left, above, or behind the cup patch.
 
 
 ### The Evolution of Positional Encodings
-To fix this, researchers developed various positional encodings to tag these patches with location data.
+To fix this, researchers developed a series of positional encodings that tag tokens or patches with location information. Many of these methods were originally developed to handle word order in sentences, but here we focus on what happens when they are applied to images.
 
-The original Transformer paper introduces absolute position encoding (APE), which assigns a unique fixed vector to every token or patch. Yet, APE is inherently brittle to varying resolutions. If a model is trained on 224 x 224-sized images, it learns specific vectors for that exact grid size. At inference time, if we input a larger image, the model cannot naturally handle the new coordinates. A naive fix is to stretch the learned positional embedding to match the new size, but this distorts the spatial relationships. The model essentially overfits to specific absolute locations, hindering its ability to generalize to unseen resolutions or recognize translation-invariant features.
+The original Transformer paper introduces **absolute position encoding (APE)**, which assigns a unique fixed vector to every patch. This approach is fine when all input images share the same size, but it fails once the resolution changes. If a model is trained on 224x224 images, it learns position vectors tied to that exact grid. 
+
+At inference time, if we input a larger image, the model cannot naturally handle the new coordinates. A naive fix is to stretch the learned positional embedding to match the new size, but this distorts the spatial relationships. The model essentially overfits to specific absolute locations, hindering its ability to generalize to unseen resolutions or recognize translation-invariant features.
 
 To move beyond fixed grid sizes, Shaw et al. (2018) introduced relative position encoding (RPE)<d-cite key="shaw2018rpe"></d-cite>. Instead of defining where a token is globally, RPE defines it by its pairwise distance to other tokens (e.g., "Patch A is two steps away from Patch B"). Since self-attention operates on token-to-token relationships, RPE aligns naturally with the self-attention mechanism and handles varying input sizes well. However, for 2D images, this is suboptimal because RPE discards absolute coordinates. For localization-heavy tasks, such as object detection, knowing exactly where a pixel is on the image is crucial. By focusing purely on relative distance, RPE degrades performance on tasks requiring precise spatial grounding<d-cite key="wu2021rethinking"></d-cite>. 
 
 The current de facto standard for large language models (LLMs) and VLMs is rotary position encoding (RoPE)<d-cite key="su2024roformer"></d-cite>. RoPE mathematically combines the advantages of both APE and RPE: it maintains absolute position information but uses rotation matrices to model relative distances naturally. This allows for better generalization to longer sequence lengths and has proven to be robust in text generation. Standard RoPE is designed for 1D text sequences. To apply it to an image, the 2D grid is typically flattened into a 1D line. This process destroys spatial fidelity, as vertically adjacent pixels might end up far apart in the flattened sequence. To address this, models like Qwen2-VL<d-cite key="wang2024qwen2"></d-cite> introduce a multimodal variant (M-RoPE), which decomposes the rotary embedding into distinct temporal, height, and width components, applying separate rotations to each dimension to preserve the structural integrity of the visual data. Although M-RoPE improves the representation of 2D grid position, it remains fundamentally limited in tasks requiring 3D spatial reasoning, as it cannot natively encode depth cues or volumetric spatial relationships without auxiliary geometric data.
 
-### The "Semantic Loudness" Problem
+### The "Semantic Loudness"
 Even if we hypothesize the existence of an advanced method that perfectly preserves the 3D structure, a growing line of research on positional encoding suggests that spatial reasoning will remain a persistent weakness, regardless of the sophistication of the encoding scheme. Recent work suggests that the issue is not only how good our positional encodings are, but how the Transformer processes them internally. Qi et al. (2025) identify a phenomenon they call **embedding norm suppression**<d-cite key="qi2025beyondsemantics"></d-cite>. Transformers excel at building high-dimensional vectors that encode "what" is in each patch (e.g., "a yellow chick", "a ceramic cup"). These semantic embeddings tend to have large vector magnitudes; simply, they are loud in the embedding space. In contrast, positional encodings are often subtle, contributing only a small magnitude to the final representation. During self-attention calculation, the "loud" semantic content dominates the computation, drowning out the softer positional signals. Effectively, the model often behaves as if the position barely matters, even though we have carefully encoded it.
 
 This effect becomes evident in a simple permutation test<d-cite key="qi2025beyondsemantics"></d-cite>. Take an image, break it into patches as usual, but then randomly shuffle the order of the visual tokens to destroy the original spatial layout. Many VLMs show only a negligible drop in performance on standard benchmarks. For instance, consider the following captioning example:
@@ -123,7 +126,7 @@ This effect becomes evident in a simple permutation test<d-cite key="qi2025beyon
     </div>
 </div>
 <div class="caption">
-    Result of the permutation test with Qwen3-VL. Even after the shuffling the model produces similar captions of the image (features highlighted in brown, yellow, and blue).
+    Result of the permutation test with Qwen3-VL. Even after the shuffling the visual tokens, the model produces similar captions of the image (features highlighted in brown, yellow, and blue).
 </div>
 
 Even after random shuffling, the generated captions remain nearly identical. The model still identifies the objects (e.g., "chick" and "blue bonnet") and produces a reasonable description of the scene. This suggests that, despite mechanisms like RoPE, the model effectively treats the image as a bag-of-semantic-features, with positional encodings contributing little to the final decision.
@@ -145,7 +148,7 @@ This leads to a familiar failure mode in spatial reasoning. The model hallucinat
 
 A naive reaction is to try to increase attention to the visual tokens. But this alone is not sufficient. If the model focuses more on the image but does not look at the right parts, spatial reasoning still fails.
 
-### Misdirected Gaze Problem
+### Misdirected Gaze
 Even if we successfully encourage a VLM to rely more on visual input, a second failure mode appears: the model may simply look in the wrong place.
 
 Consider asking the question, “Is the chick in front of or behind the cup?” Ideally, the model should focus on the patches containing the chick and the cup. However, empirical analysis<d-cite key="chen2025why"></d-cite> shows that VLMs frequently scatter their attention across irrelevant regions, such as the table surface, the background wall, or other high-contrast noises, while paying relatively little attention to the actual objects mentioned in the question. In such cases, the model is technically “looking at the image,” but not at the evidence needed to answer the question.
