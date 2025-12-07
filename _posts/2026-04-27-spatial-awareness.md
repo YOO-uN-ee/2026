@@ -162,7 +162,16 @@ A natural reaction is to simply increase attention to visual tokens. But that al
 ### Misdirected Gaze
 Even if we manage to encourage a VLM to rely more on visual input, a second failure mode appears: the model may simply look in the wrong place.
 
-Consider asking, "Is the chick in front of or behind the cup?" Ideally, the model should concentrate its attention on the patches containing the chick and the cup. In practice, empirical analyses<d-cite key="chen2025why"></d-cite> shows that VLMs often scatter their attention across irrelevant regions, such as the table surface or the background wall, while paying relatively little attention to the objects mentioned in the question. In these cases, the model is technically "looking at the image," but not at the evidence needed to answer the question.
+Consider asking, "Where is the chick in relation to the cup?" Ideally, the model should concentrate its attention on the patches containing the chick and the cup. In practice, empirical analyses<d-cite key="chen2025why"></d-cite> shows that VLMs often scatter their attention across irrelevant regions, such as the table surface or the background wall, while paying relatively little attention to the objects mentioned in the question. In these cases, the model is technically "looking at the image," but not at the evidence needed to answer the question.
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/5.png" %}
+    </div>
+</div>
+<div class="caption">
+    A heatmap overlay generated using Qwen3-VL with the question "<em>Where is the chick in relation to the cup?</em>" The visualization illustrates the average attention weights from the final decoder layer, showing how the question attend to specific image areas. Warmer colors (red) indicate regions with higher model focus and colder colors (blue) indicate regions with lower model focus.
+</div>
 
 To address this, a recent work proposes **AdaptVis**<d-cite key="chen2025why"></d-cite>, a training-free method that redirects attention at inference time. The key idea is to use the model's own prediction confidence to adapt its visual attention pattern dynamically. When the model is confident, AdaptVis sharpens the attention distribution, narrowing the focus to regions the model already considers relevant and suppressing background noise. When the model is uncertain, AdaptVis broadens the attention window, encouraging exploration of wider area and potentially discovering objects and relationships it initially overlooked. This confidence-guided adjustment shows strong empirical gains and suggests that many spatial failures arise not from the lack of capability to reason about space, but from *failing to focus on the right evidence at the right time*.
 
