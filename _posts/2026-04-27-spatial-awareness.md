@@ -14,7 +14,14 @@ mermaid:
 
 # Anonymize when submitting
 authors:
-  - name: Anonymous
+  - name: Jiyoon Pyo
+    url: "https://yoo-un-ee.github.io/"
+    affiliations:
+      name: University of Minnesota-Twin Cities
+  - name: Yao-Yi Chiang
+    url: "https://yaoyichi.github.io/"
+    affiliations:
+      name: University of Minnesota-Twin Cities
 
 # must be the exact same name as your blogpost
 bibliography: 2026-04-27-spatial-awareness.bib
