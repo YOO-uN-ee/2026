@@ -195,7 +195,7 @@ Consider asking, "Where is the chick in relation to the cup?" Ideally, the model
 To address this, a recent work proposes **AdaptVis**<d-cite key="chen2025why"></d-cite>, a training-free method that redirects attention at inference time. The key idea is to dynamically adapt the model's visual attention pattern using its own prediction confidence. When the model is confident, AdaptVis sharpens the attention distribution, narrowing the focus to regions the model already considers relevant. When the model is uncertain, AdaptVis broadens the attention window, encouraging exploration of a wider area and potentially discovering objects and relationships it initially overlooked. This confidence-guided adjustment shows strong empirical gains and suggests that many spatial failures arise not from the lack of capability to reason about space, but from **failing to focus on the right evidence at the right time**.
 
 <details class="bg-transparent border-0 shadow-none p-0">
-  <summary class="largeimage">Larger version of the input image</summary>
+  <summary class="largeimage">Effect of applying AdaptVis to the chick and cup image</summary>
   
   <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0 text-center">
@@ -209,7 +209,7 @@ To address this, a recent work proposes **AdaptVis**<d-cite key="chen2025why"></
   </div>
 
   <div class="caption mt-3 text-justify">
-    <strong>Note:</strong> In the Post-AdaptVis evaluation, attention focus is noticeably lessened on the top left corner and the background, demonstrating a more concentrated focus on the cup.
+    <strong>Note:</strong> Applying AdaptVis reduces the attention scatter across the wall region. As seen on the right (Post-AdaptVis), background noise is reduced, pulling the model's attention away from irrelevant regions and concetrating it around the alphabet 'A' on the cup.
   </div>
 </details>
 
