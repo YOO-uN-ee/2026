@@ -194,6 +194,25 @@ Consider asking, "Where is the chick in relation to the cup?" Ideally, the model
 
 To address this, a recent work proposes **AdaptVis**<d-cite key="chen2025why"></d-cite>, a training-free method that redirects attention at inference time. The key idea is to dynamically adapt the model's visual attention pattern using its own prediction confidence. When the model is confident, AdaptVis sharpens the attention distribution, narrowing the focus to regions the model already considers relevant. When the model is uncertain, AdaptVis broadens the attention window, encouraging exploration of a wider area and potentially discovering objects and relationships it initially overlooked. This confidence-guided adjustment shows strong empirical gains and suggests that many spatial failures arise not from the lack of capability to reason about space, but from **failing to focus on the right evidence at the right time**.
 
+<details class="bg-transparent border-0 shadow-none p-0">
+  <summary class="largeimage">Larger version of the input image</summary>
+  
+  <div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0 text-center">
+      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/7.png" class="img-fluid rounded" %}
+      <div class="caption mt-2"><strong>Pre-AdaptVis</strong></div>
+    </div>
+    <div class="col-sm mt-3 mt-md-0 text-center">
+      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/8.png" class="img-fluid rounded" %}
+      <div class="caption mt-2"><strong>Post-AdaptVis</strong></div>
+    </div>
+  </div>
+
+  <div class="caption mt-3 text-justify">
+    <strong>Note:</strong> In the Post-AdaptVis evaluation, attention focus is noticeably lessened on the top left corner and the background, demonstrating a more concentrated focus on the cup.
+  </div>
+</details>
+
 AdaptVis and similar methods show that attention allocation is crucial for spatial reasoning. They show that VLMs often underuse available visual information and that steering attention can significantly improve performance.
 
 However, AdaptVis is not a complete solution. As the method operates purely at inference time, it cannot change the model's internal representation or how the spatial relations are learned in the first place. If the model never learned concepts like "in front of" vs. "behind," simply pointing its attention more precisely will not fully close those gaps. In other words, attention steering helps the model make better use of what it already knows, but by itself, it cannot guarantee the richer, human-like spatial reasoning that many applications require.
