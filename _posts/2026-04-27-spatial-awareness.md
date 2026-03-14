@@ -194,22 +194,22 @@ Consider asking, "Where is the chick in relation to the cup?" Ideally, the model
 
 To address this, a recent work proposes **AdaptVis**<d-cite key="chen2025why"></d-cite>, a training-free method that redirects attention at inference time. The key idea is to dynamically adapt the model's visual attention pattern using its own prediction confidence. When the model is confident, AdaptVis sharpens the attention distribution, narrowing the focus to regions the model already considers relevant. When the model is uncertain, AdaptVis broadens the attention window, encouraging exploration of a wider area and potentially discovering objects and relationships it initially overlooked. This confidence-guided adjustment shows strong empirical gains, including gains of up to 50% on certain subset of the WhatsUp dataset<d-cite key="kamath2023whatsup"></d-cite>. More broadly, it suggests that many spatial failures arise not from the lack of capability to reason about space, but from **failing to focus on the right evidence at the right time**.
 
-<details class="bg-transparent border-0 shadow-none p-0">
+<details class="bg-transparent border-0 shadow-none p-0 overflow-hidden">
   <summary class="largeimage">Effect of applying AdaptVis to the chick and cup image</summary>
-  
-  <div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0 text-center">
+
+  <div class="row g-3 mx-0 mt-3">
+    <div class="col-sm text-center">
       <div class="caption mt-2"><strong>Pre-AdaptVis</strong></div>
-      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/7.png" class="img-fluid rounded" %}
+      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/7.png" class="img-fluid rounded w-100" %}
     </div>
-    <div class="col-sm mt-3 mt-md-0 text-center">
+    <div class="col-sm text-center">
       <div class="caption mt-2"><strong>Post-AdaptVis</strong></div>
-      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/8.png" class="img-fluid rounded" %}
+      {% include figure.liquid path="assets/img/2026-04-27-spatial-awareness/8.png" class="img-fluid rounded w-100" %}
     </div>
   </div>
 
   <div class="caption mt-3 text-center">
-    <strong>Note:</strong> Applying AdaptVis reduces the attention scatter across the wall and table region. As seen on the right (Post-AdaptVis), background noise is reduced, pulling the model's attention away from irrelevant regions and concetrating it around the alphabet 'A' on the cup.
+    <strong>Note:</strong> Applying AdaptVis reduces the attention scatter across the wall and table region. As seen on the right (Post-AdaptVis), background noise is reduced, pulling the model's attention away from irrelevant regions and concentrating it around the alphabet 'A' on the cup.
   </div>
 </details>
 
